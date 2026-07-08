@@ -1,0 +1,10 @@
+numpy
+pandas
+astropy
+astroquery
+requests
+sqlite3
+os
+time
+re
+io

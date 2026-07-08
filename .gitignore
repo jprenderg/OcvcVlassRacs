@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Cache / downloaded files
+cache/
+data/cache/
+
+# Large generated files
+*.fits
+*.fit
+*.pkl
+*.csv
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
