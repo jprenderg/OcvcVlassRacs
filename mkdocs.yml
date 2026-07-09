@@ -1,0 +1,11 @@
+site_name: OCVC VLASS/RACS Catalog
+site_url: https://jprenderg.github.io/OcvcVlassRacs/
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Catalog Fields: fields.md
+  - Downloads: downloads.md
+  - Updating the Catalog: updating.md
