@@ -95,7 +95,7 @@ This page summarizes the fields included in the OCVC VLASS/RACS catalog database
 | `PERIOD` | Period value. |
 | `PERIOD_ERROR` | Period error. |
 
-## Source_Table
+## Summary_Table
 
 | Field | Description |
 |---|---|
