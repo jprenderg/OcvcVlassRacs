@@ -339,6 +339,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#summary_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary_Table
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -476,6 +487,17 @@
     <span class="md-ellipsis">
       
         Period_Table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary_Table
       
     </span>
   </a>
@@ -703,6 +725,53 @@ PERIOD_ERROR (self-explanatory)</p>
 <tr>
 <td><code>PERIOD_ERROR</code></td>
 <td>Period error.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="summary_table">Summary_Table</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SOURCE_ID</code></td>
+<td>Unique source identifier. There is a many-to-one correspondence between rows and <code>SOURCE_ID</code> values in this table.</td>
+</tr>
+<tr>
+<td><code>RA</code></td>
+<td>Right ascension, in degrees.</td>
+</tr>
+<tr>
+<td><code>DEC</code></td>
+<td>Declination, in degrees.</td>
+</tr>
+<tr>
+<td><code>NAME</code></td>
+<td>Default SIMBAD Name.</td>
+</tr>
+<tr>
+<td><code>PORB</code></td>
+<td>Estimated orbital period.</td>
+</tr>
+<tr>
+<td><code>GAIA_G_MAG</code></td>
+<td>G-band magnitude from Gaia mission.</td>
+</tr>
+<tr>
+<td><code>RACS_FLUX</code></td>
+<td>Flux from the RACS survey conducted with the ASKAP telescope.</td>
+</tr>
+<tr>
+<td><code>VLASS_MAX_FLUX</code></td>
+<td>Flux from the VLASS survey conducted with the VLA telescope. Maximum over epochs.</td>
+</tr>
+<tr>
+<td><code>VLASS_NUM_DETECTIONS</code></td>
+<td>Number of epochs in which a VLASS flux was detected.</td>
 </tr>
 </tbody>
 </table>
