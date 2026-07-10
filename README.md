@@ -5,7 +5,7 @@ The **OCVC VLASS/RACS Catalog** is a database of radio observations of known and
 This repository contains:
 
 - The OCVC VLASS/RACS catalog database.
-- A CSV version of the Source Table.
+- A CSV version of the Summary Table.
 - Python software for adding new sources to the catalog.
 - Documentation describing the catalog and its database schema.
 
@@ -31,7 +31,7 @@ The documentation includes:
 The latest catalog data products include:
 
 - SQLite database
-- Source Table (CSV)
+- Summary Table (CSV)
 
 See the **Downloads** page in the documentation for the latest files.
 
@@ -52,11 +52,9 @@ Complete instructions are provided in the **Updating the Catalog** section of th
 ```text
 OcvcVlassRacs/
 │
-├── docs/                  Documentation website
+├── docs/                  For documentation website
 │
-├── downloads/
-│   ├── OcvcVlassRacs.sqlite
-│   └── OcvcVlassRacs_Source_Table.csv
+├── downloads/             Full database file and summary table
 │
 ├── input/                 Master catalog database
 │

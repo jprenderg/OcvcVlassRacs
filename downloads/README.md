@@ -13,6 +13,7 @@ The complete SQLite database containing the following tables:
 - `Measurement_Table`
 - `Class_Table`
 - `Period_Table`
+- `Summary_Table`
 
 The tables are linked through the `SOURCE_ID` field.
 
@@ -20,11 +21,11 @@ This file is recommended for users who wish to perform SQL queries or make use o
 
 ---
 
-### `OcvcVlassRacs_Source_Table.csv`
+### `Source_Table.csv`
 
 A CSV version of the `Source_Table`.
 
-This file contains one row for each primary catalog source and is intended for users who require only the primary source catalog without the complete relational database.
+This file contains one row for each primary catalog source and is intended for users who wish to see a quick summary of data for a particular source.
 
 ---
 
