@@ -13,6 +13,7 @@ The complete SQLite database containing the following tables:
 - `Measurement_Table`
 - `Class_Table`
 - `Period_Table`
+- `Summary_Table`
 
 The tables are linked through the `SOURCE_ID` field.
 
@@ -20,7 +21,7 @@ This file is recommended for users who wish to perform SQL queries or make use o
 
 ---
 
-### `OcvcVlassRacs_Source_Table.csv`
+### `Source_Table.csv`
 
 A CSV version of the `Source_Table`.
 

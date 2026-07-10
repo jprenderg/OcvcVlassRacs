@@ -94,3 +94,17 @@ This page summarizes the fields included in the OCVC VLASS/RACS catalog database
 | `UNITS` | Period units. |
 | `PERIOD` | Period value. |
 | `PERIOD_ERROR` | Period error. |
+
+## Source_Table
+
+| Field | Description |
+|---|---|
+| `SOURCE_ID` | Unique source identifier. There is a many-to-one correspondence between rows and `SOURCE_ID` values in this table. |
+| `RA` | Right ascension, in degrees. |
+| `DEC` | Declination, in degrees. |
+| `NAME` | Default SIMBAD Name. |
+| `PORB` | Estimated orbital period. |
+| `GAIA_G_MAG` | G-band magnitude from Gaia mission. |
+| `RACS_FLUX` | Flux from the RACS survey conducted with the ASKAP telescope. |
+| `VLASS_MAX_FLUX` | Flux from the VLASS survey conducted with the VLA telescope. Maximum over epochs.|
+| `VLASS_NUM_DETECTIONS` | Number of epochs in which a VLASS flux was detected.|

@@ -13,6 +13,7 @@ The catalog consists of the following principal tables:
 - **Name Table** – Catalog identifiers, aliases, and default source names.
 - **Class Table** – Cataclysmic variable classifications.
 - **Period Table** – Orbital and spin period information.
+- **Summary Table** – One row summary of data for each source.
 
 ## Documentation
 
