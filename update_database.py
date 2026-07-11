@@ -255,6 +255,165 @@ else:
 
 print(f"New period rows: {len(df_period)}")
 
+##############################  df_summary ########################################
+
+
+# ------------------------------------------------------------
+# Default name
+# ------------------------------------------------------------
+
+df_default_name = (
+    df_name.loc[
+        df_name["DEFAULT_NAME"].isin([1, True]),
+        ["SOURCE_ID", "NAME"]
+    ]
+    .drop_duplicates(subset="SOURCE_ID", keep="first")
+)
+
+# ------------------------------------------------------------
+# Default class
+# ------------------------------------------------------------
+
+df_default_class = (
+    df_class.loc[
+        df_class["DEFAULT_CLASS"].isin([1, True]),
+        ["SOURCE_ID", "CLASS"]
+    ]
+    .drop_duplicates(subset="SOURCE_ID", keep="first")
+)
+
+# ------------------------------------------------------------
+# Orbital period
+# ------------------------------------------------------------
+
+df_porb = (
+    df_period.loc[
+        df_period["TYPE"].astype(str).str.casefold() == "orbit",
+        ["SOURCE_ID", "PERIOD"]
+    ]
+    .drop_duplicates(subset="SOURCE_ID", keep="first")
+    .rename(columns={"PERIOD": "PORB"})
+)
+
+# ------------------------------------------------------------
+# Ensure measurement values are numeric
+#
+# Non-numeric values are converted to NaN. The original
+# df_measurement is not modified.
+# ------------------------------------------------------------
+
+df_measurement_numeric = df_measurement.copy()
+
+df_measurement_numeric["MEASUREMENT_NUMERIC"] = pd.to_numeric(
+    df_measurement_numeric["MEASUREMENT"],
+    errors="coerce"
+)
+
+# ------------------------------------------------------------
+# Gaia G magnitude
+# ------------------------------------------------------------
+
+gaia_mask = (
+    df_measurement_numeric["OBSERVATORY"].astype(str).str.casefold().eq("gaia")
+    & df_measurement_numeric["BAND"].astype(str).str.casefold().eq("g")
+)
+
+df_gaia = (
+    df_measurement_numeric.loc[
+        gaia_mask,
+        ["SOURCE_ID", "MEASUREMENT_NUMERIC"]
+    ]
+    .drop_duplicates(subset="SOURCE_ID", keep="first")
+    .rename(columns={"MEASUREMENT_NUMERIC": "GAIA_G_MAG"})
+)
+
+# ------------------------------------------------------------
+# RACS flux
+# ------------------------------------------------------------
+
+racs_mask = (
+    df_measurement_numeric["OBSERVATORY"]
+    .astype(str)
+    .str.casefold()
+    .eq("askap")
+)
+
+df_racs = (
+    df_measurement_numeric.loc[
+        racs_mask,
+        ["SOURCE_ID", "MEASUREMENT_NUMERIC"]
+    ]
+    .drop_duplicates(subset="SOURCE_ID", keep="first")
+    .rename(columns={"MEASUREMENT_NUMERIC": "RACS_FLUX"})
+)
+
+# ------------------------------------------------------------
+# VLASS maximum flux and number of numerical detections
+# ------------------------------------------------------------
+
+vlass_mask = (
+    df_measurement_numeric["OBSERVATORY"]
+    .astype(str)
+    .str.casefold()
+    .eq("vla")
+)
+
+df_vlass = (
+    df_measurement_numeric.loc[vlass_mask]
+    .groupby("SOURCE_ID", as_index=False)
+    .agg(
+        VLASS_MAX_FLUX=("MEASUREMENT_NUMERIC", "max"),
+        VLASS_NUM_DETECTIONS=("MEASUREMENT_NUMERIC", "count")
+    )
+)
+
+# ------------------------------------------------------------
+# Construct summary dataframe
+# ------------------------------------------------------------
+
+df_summary = (
+    df_source[["SOURCE_ID", "RA", "DEC"]]
+    .merge(df_default_name, on="SOURCE_ID", how="left")
+    .merge(df_default_class, on="SOURCE_ID", how="left")
+    .merge(df_porb, on="SOURCE_ID", how="left")
+    .merge(df_gaia, on="SOURCE_ID", how="left")
+    .merge(df_racs, on="SOURCE_ID", how="left")
+    .merge(df_vlass, on="SOURCE_ID", how="left")
+)
+
+# Sources with no VLA measurement rows should have zero detections,
+# rather than NaN.
+df_summary["VLASS_NUM_DETECTIONS"] = (
+    df_summary["VLASS_NUM_DETECTIONS"]
+    .fillna(0)
+    .astype(int)
+)
+
+# Explicit final column order
+df_summary = df_summary[
+    [
+        "SOURCE_ID",
+        "RA",
+        "DEC",
+        "NAME",
+        "CLASS",
+        "PORB",
+        "GAIA_G_MAG",
+        "RACS_FLUX",
+        "VLASS_MAX_FLUX",
+        "VLASS_NUM_DETECTIONS",
+    ]
+]
+
+df_summary = df_summary.where(pd.notna(df_summary), None)
+
+print(df_summary)
+
+
+
+######################################################################################
+
+
 
 # ------------------------------------------------------------
 # Add only new rows to output database
@@ -266,6 +425,7 @@ tables = {
     "measurement_table": df_measurement,
     "class_table": df_class,
     "period_table": df_period,
+    "summary_table": df_summary
 }
 
 conn = sqlite3.connect(db_path)
