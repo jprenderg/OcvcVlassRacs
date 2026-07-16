@@ -68,8 +68,9 @@ The program automatically:
 - Creates records in `Measurement_Table`
 - Creates records in `Class_Table`
 - Creates records in `Period_Table`
+- Creates records in `Summary_Table`
 
-The new records are appended to:
+The output database contains only the newly added records and is written to:
 
 ```text
 output/VLASS_RACS_Updated.db
