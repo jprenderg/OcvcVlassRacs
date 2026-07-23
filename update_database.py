@@ -4,13 +4,15 @@ import numpy as np
 import pandas as pd
 import gc
 import sys
+import shutil
 
-from config import INPUT_DB, OUTPUT_DB
+from config import MASTER_DB, OUTPUT_DB, OUTPUT_SUMMARY
 
 from source_table.python.MAXID import maxid
 from source_table.python.VLASS_NEIGHBORS import vlass_neighbors
 from source_table.python.RACS_NEIGHBORS import racs_neighbors
 from source_table.python.ADD_SIMBAD_FIELDS import add_simbad_fields
+from source_table.python.ADD_GAIA_DIST import add_gaia_dist
 
 from name_table.python.NAME import name
 
@@ -30,8 +32,17 @@ from class_table.python.CLASS import source_class
 # User inputs
 # ------------------------------------------------------------
 
+# AR Sco
 ra = 245.4470133276900
 dec = -22.8862182469700
+
+# Random
+# ra = 245.
+# dec = -21.
+
+# Will be used if no SIMBAD match for the given RA and DEC
+user_source_name = "MySourceName"
+user_class_name = "MyClassName"
 
 PORB = None
 PORB_ERR = None
@@ -39,13 +50,16 @@ PORB_ERR = None
 PSPIN = None
 PSPIN_ERR = None
 
+# ------------------------------------------------------------
+# Copy over files
+# ------------------------------------------------------------
 
 # ------------------------------------------------------------
 # Prepare output database
 # ------------------------------------------------------------
 
-if not INPUT_DB.exists():
-    raise FileNotFoundError(f"Input database not found: {INPUT_DB}")
+if not MASTER_DB.exists():
+    raise FileNotFoundError(f"Input database not found: {MASTER_DB}")
 
 OUTPUT_DB.parent.mkdir(parents=True, exist_ok=True)
 
@@ -76,28 +90,41 @@ df_vlass_neighbors["PRIMARY_FLAG"] = False
 df_racs_neighbors = racs_neighbors(ra, dec)
 df_racs_neighbors["PRIMARY_FLAG"] = False
 
-df_source_interm = pd.concat(
+df_source = pd.concat(
     [df_primary, df_vlass_neighbors, df_racs_neighbors],
     ignore_index=True,
 )
 
-df_source = add_simbad_fields(df_source_interm)
+df_source = add_simbad_fields(df_source)
 
-df_source = df_source.dropna(subset=["SIMBAD_NAME"]).reset_index(drop=True)
+df_source = add_gaia_dist(df_source)
+
+df_source = pd.concat([
+    df_source.iloc[[0]],
+    df_source.iloc[1:].dropna(subset=["SOURCE_NAME"])
+]).reset_index(drop=True)
+
+if pd.isna(df_source.at[0, "SOURCE_NAME"]):
+    no_simbad = True
+else:
+    no_simbad = False
+    
+if no_simbad == True:
+    df_source.at[0, "SOURCE_NAME"] = user_source_name    
 
 mask_duplicate_neighbor = (
     (df_source["PRIMARY_FLAG"] == False)
-    & df_source.duplicated(subset="SIMBAD_NAME", keep="first")
+    & df_source.duplicated(subset="SOURCE_NAME", keep="first")
 )
 
 df_source = df_source.loc[~mask_duplicate_neighbor].reset_index(drop=True)
 
 
-# ------------------------------------------------------------
-# Remove neighbors already present in input database
-# ------------------------------------------------------------
+# # ------------------------------------------------------------
+# # Remove neighbors already present in input database
+# # ------------------------------------------------------------
 
-conn = sqlite3.connect(INPUT_DB)
+conn = sqlite3.connect(MASTER_DB)
 
 try:
     df_current_names = pd.read_sql_query(
@@ -119,7 +146,7 @@ current_names = df_current_names["NAME"].dropna()
 
 mask_existing_neighbor = (
     (df_source["PRIMARY_FLAG"] == False)
-    & df_source["SIMBAD_NAME"].isin(current_names)
+    & df_source["SOURCE_NAME"].isin(current_names)
 )
 
 df_source = df_source.loc[~mask_existing_neighbor].reset_index(drop=True)
@@ -131,16 +158,25 @@ df_source["SOURCE_ID"] = np.arange(
 
 df_source_for_name = df_source.copy()
 
-df_source = df_source.drop(columns=["SIMBAD_NAME"])
+df_source = df_source.drop(columns=["SOURCE_NAME"])
 
 print(f"New source rows: {len(df_source)}")
 
 
-# ------------------------------------------------------------
-# Name Table
-# ------------------------------------------------------------
+# # ------------------------------------------------------------
+# # Name Table
+# # ------------------------------------------------------------
 
-df_name = name(df_source_for_name)
+if no_simbad==True: 
+    
+    df_name = pd.DataFrame({
+        "SOURCE_ID": [primary_source_id],
+        "NAME": [user_source_name],
+        "DEFAULT_NAME": [True]
+    })
+
+else: 
+    df_name = name(df_source_for_name)
 
 print(f"New name rows: {len(df_name)}")
 
@@ -172,29 +208,20 @@ df_vlass = pd.concat([df_vlass_1, df_vlass_23], ignore_index=True)
 
 df_primary_new = df_source[df_source["PRIMARY_FLAG"] == True].copy()
 
-if len(df_primary_new) > 0:
 
-    primary_row = df_primary_new.iloc[0]
+primary_row = df_primary_new.iloc[0]
 
-    primary_id = primary_row["SOURCE_ID"]
-    primary_ra = primary_row["RA"]
-    primary_dec = primary_row["DEC"]
+primary_id = primary_row["SOURCE_ID"]
+primary_ra = primary_row["RA"]
+primary_dec = primary_row["DEC"]
 
-    df_tmass = tmass(primary_id, primary_ra, primary_dec)
-    df_gaia = gaia(primary_id, primary_ra, primary_dec)
-    df_galex = galex(primary_id, primary_ra, primary_dec)
-    df_chandra = chandra(primary_id, primary_ra, primary_dec)
-    df_rosat = rosat(primary_id, primary_ra, primary_dec)
-    df_xmm = xmm(primary_id, primary_ra, primary_dec)
+df_tmass = tmass(primary_id, primary_ra, primary_dec)
+df_gaia = gaia(primary_id, primary_ra, primary_dec)
+df_galex = galex(primary_id, primary_ra, primary_dec)
+df_chandra = chandra(primary_id, primary_ra, primary_dec)
+df_rosat = rosat(primary_id, primary_ra, primary_dec)
+df_xmm = xmm(primary_id, primary_ra, primary_dec)
 
-else:
-
-    df_tmass = pd.DataFrame()
-    df_gaia = pd.DataFrame()
-    df_galex = pd.DataFrame()
-    df_chandra = pd.DataFrame()
-    df_rosat = pd.DataFrame()
-    df_xmm = pd.DataFrame()
 
 df_measurement = pd.concat(
     [
@@ -218,40 +245,53 @@ print(f"New measurement rows: {len(df_measurement)}")
 # ------------------------------------------------------------
 # Class Table
 # ------------------------------------------------------------
+df_class = pd.DataFrame()
 
-if len(df_primary_new) > 0:
-    df_class = source_class(primary_id, primary_ra, primary_dec)
-else:
-    df_class = pd.DataFrame()
+for _, row in df_source.iterrows():
+
+    source_id = row["SOURCE_ID"]
+    ra_source = row["RA"]
+    dec_source = row["DEC"]
+
+    df_temp = source_class(source_id, ra_source, dec_source)
+    df_class = pd.concat([df_class, df_temp], ignore_index=True)
+    
+    
+if no_simbad:
+
+    df_class = df_class[
+        df_class["SOURCE_ID"] != primary_source_id
+    ].reset_index(drop=True)
+
+    df_primary_class = pd.DataFrame({
+        "SOURCE_ID": [primary_source_id],
+        "CLASS": [user_class_name],
+        "DEFAULT_CLASS": [True],
+    })
+
+    df_class = pd.concat(
+        [df_primary_class, df_class],
+        ignore_index=True
+    )    
+
 
 print(f"New class rows: {len(df_class)}")
+
 
 
 # ------------------------------------------------------------
 # Period Table
 # ------------------------------------------------------------
 
-if len(df_primary_new) > 0:
 
-    df_period = pd.DataFrame({
-        "SOURCE_ID": [primary_id, primary_id],
-        "TYPE": ["Orbital", "Spin"],
-        "UNITS": ["Hours", "Seconds"],
-        "PERIOD": [PORB, PSPIN],
-        "PERIOD_ERROR": [PORB_ERR, PSPIN_ERR],
-    })
+df_period = pd.DataFrame({
+    "SOURCE_ID": [primary_id, primary_id],
+    "TYPE": ["Orbital", "Spin"],
+    "UNITS": ["Hours", "Seconds"],
+    "PERIOD": [PORB, PSPIN],
+    "PERIOD_ERROR": [PORB_ERR, PSPIN_ERR],
+})
 
-else:
-
-    df_period = pd.DataFrame(
-        columns=[
-            "SOURCE_ID",
-            "TYPE",
-            "UNITS",
-            "PERIOD",
-            "PERIOD_ERROR",
-        ]
-    )
 
 print(f"New period rows: {len(df_period)}")
 
@@ -407,13 +447,16 @@ df_summary = df_summary[
 
 df_summary = df_summary.where(pd.notna(df_summary), None)
 
+df_summary.to_csv(
+    OUTPUT_SUMMARY,
+    index=False
+)
+
 print(df_summary)
 
 
 
 ######################################################################################
-
-
 
 # ------------------------------------------------------------
 # Add only new rows to output database
@@ -425,7 +468,6 @@ tables = {
     "measurement_table": df_measurement,
     "class_table": df_class,
     "period_table": df_period,
-    "summary_table": df_summary
 }
 
 conn = sqlite3.connect(db_path)

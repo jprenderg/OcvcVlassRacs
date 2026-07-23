@@ -15,14 +15,14 @@ import sys
 
 repo_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(repo_root))
-from config import INPUT_DB
+from config import MASTER_DB
 from config import OUTPUT_DB
 
 # ------------------------------------------------------------
 # Inputs
 # ------------------------------------------------------------
 
-db_path = INPUT_DB
+db_path = OUTPUT_DB
 
 ra_in = 245.4470133276900
 dec_in = -22.8862182469700
@@ -165,7 +165,6 @@ tables = [
     ("Measurement_Table", "measurement_table", "OBSERVATORY, EPOCH, BAND"),
     ("Class_Table", "class_table", "DEFAULT_CLASS DESC, CLASS"),
     ("Period_Table", "period_table", "TYPE, PERIOD"),
-    ("Summary_Table", "summary_table", "RA, DEC")
 ]
 
 for label, table_name, order_by in tables:

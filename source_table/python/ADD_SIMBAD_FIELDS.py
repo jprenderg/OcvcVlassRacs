@@ -16,31 +16,26 @@ def add_simbad_fields(df_source_interm):
     """
     Adds the following columns to df_source_interm:
 
-        SIMBAD_NAME
+        SOURCE_NAME
         MAJOR_AXIS
         MINOR_AXIS
         POSITION_ANGLE
-        DISTANCE
-        DISTANCE_ERROR
 
     using the nearest SIMBAD source within search_radius_arcsec.
     """
 
     # Create output columns
     new_cols = [
-        "SIMBAD_NAME",
+        "SOURCE_NAME",
         "MAJOR_AXIS",
         "MINOR_AXIS",
-        "POSITION_ANGLE",
-        "DISTANCE",
-        "DISTANCE_ERROR"
+        "POSITION_ANGLE"
     ]
 
     for col in new_cols:
         df_source_interm[col] = np.nan
-        
-    search_radius_arcsec=15.0    
 
+    search_radius_arcsec = 2.0
     search_radius_deg = search_radius_arcsec / 3600.0
 
     for i in range(len(df_source_interm)):
@@ -59,9 +54,7 @@ def add_simbad_fields(df_source_interm):
                 basic.dec,
                 basic.galdim_majaxis,
                 basic.galdim_minaxis,
-                basic.galdim_angle,
-                basic.plx_value,
-                basic.plx_err
+                basic.galdim_angle
             FROM basic
             WHERE 1 = CONTAINS(
                 POINT('ICRS', basic.ra, basic.dec),
@@ -93,19 +86,11 @@ def add_simbad_fields(df_source_interm):
             )
 
             j = df_query["SEPARATION"].idxmin()
-            
-            plx = df_query.at[j, "plx_value"]
-            plx_err = df_query.at[j, "plx_err"]
-            
-            distance = 1/plx
-            distance_err = plx_err/plx**2
 
-            df_source_interm.at[i, "SIMBAD_NAME"] = df_query.at[j, "main_id"]
+            df_source_interm.at[i, "SOURCE_NAME"] = df_query.at[j, "main_id"]
             df_source_interm.at[i, "MAJOR_AXIS"] = df_query.at[j, "galdim_majaxis"]
             df_source_interm.at[i, "MINOR_AXIS"] = df_query.at[j, "galdim_minaxis"]
             df_source_interm.at[i, "POSITION_ANGLE"] = df_query.at[j, "galdim_angle"]
-            df_source_interm.at[i, "DISTANCE"] = distance
-            df_source_interm.at[i, "DISTANCE_ERROR"] = distance_err
 
         except Exception as e:
             print(f"Row {i}: {e}")

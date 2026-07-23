@@ -20,7 +20,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 LOOKUP_DIR = DATA_DIR / "lookup"
 CACHE_DIR = DATA_DIR / "cache" / "casda"
 
-INPUT_DIR = PROJECT_ROOT / "input"
+MASTER_DIR = PROJECT_ROOT / "master"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 DOCS_DIR = PROJECT_ROOT / "docs"
 SUBMISSIONS_DIR = PROJECT_ROOT / "submissions"
@@ -36,12 +36,14 @@ VLASS1_LIST = LOOKUP_DIR / "VLASS1_img_list_10Aug25.txt"
 VLASS23_LIST = LOOKUP_DIR / "VLASS_2_3_img_list_10Aug25.txt"
 
 # ------------------------------------------------------------
-# Databases
+# Databases and Summary
 # ------------------------------------------------------------
 
-INPUT_DB = INPUT_DIR / "VLASS_RACS_Master.db"
+MASTER_DB = MASTER_DIR / "VLASS_RACS_Master.db"
+MASTER_SUMMARY = MASTER_DIR / "summary_table.csv"
 
-OUTPUT_DB = OUTPUT_DIR / "VLASS_RACS_Updated.db"
+OUTPUT_DB = OUTPUT_DIR / "VLASS_RACS_Update.db"
+OUTPUT_SUMMARY = OUTPUT_DIR / "summary_table.csv"
 
 # ------------------------------------------------------------
 # Table directories
@@ -89,7 +91,7 @@ PERIOD_CSV = PERIOD_DIR / "csv" / "Period.csv"
 
 for directory in [
     CACHE_DIR,
-    INPUT_DIR,
+    MASTER_DIR,
     OUTPUT_DIR,
     SOURCE_DIR / "pickle",
     SOURCE_DIR / "csv",

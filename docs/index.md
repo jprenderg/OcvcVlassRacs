@@ -2,7 +2,7 @@
 
 Welcome to the documentation for the **Open Cataclysmic Variable Catalog (OCVC) VLASS/RACS Catalog**.
 
-The OCVC VLASS/RACS Catalog provides radio observations of known and candidate cataclysmic variables by combining measurements from the **Very Large Array Sky Survey (VLASS)** and the **Rapid ASKAP Continuum Survey (RACS)**. It also includes supplementary information from major optical, infrared, ultraviolet, X-ray, and astrometric surveys.
+The OCVRC provides radio observations of known and candidate cataclysmic variables by combining measurements from the **Very Large Array Sky Survey (VLASS)** and the **Rapid ASKAP Continuum Survey (RACS)**. It also includes supplementary information from major optical, infrared, ultraviolet, X-ray, and astrometric surveys.
 
 ## Catalog Overview
 
@@ -13,7 +13,8 @@ The catalog consists of the following principal tables:
 - **Name Table** – Catalog identifiers, aliases, and default source names.
 - **Class Table** – Cataclysmic variable classifications.
 - **Period Table** – Orbital and spin period information.
-- **Summary Table** – One row summary of data for each source.
+
+It also includes a **Source Summary Table** CSV file. This file contains one row for each primary catalog source and is intended for users who require only the primary source catalog without the complete relational database.
 
 ## Documentation
 
@@ -23,7 +24,7 @@ Detailed documentation for each table is available from the navigation menu.
 
 Machine-readable versions of the catalog are available for download:
 
-- Source Table (CSV)
+- Source Summary Table (CSV)
 - SQLite database
 
 ## Citation

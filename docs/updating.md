@@ -53,6 +53,7 @@ Enter the following information:
 - Orbital period uncertainty (optional)
 - Spin period (optional)
 - Spin period uncertainty (optional)
+- A user provided source and class name for use in the event that a SIMBAD match is not available
 
 Run the program:
 
@@ -82,14 +83,18 @@ The master database is **never modified**.
 
 ## Output
 
-After the program finishes, the updated database is located at:
+After the program finishes, the update database is located at:
 
 ```text
 output/VLASS_RACS_Updated.db
 ```
-
 This database contains only the newly added records and their associated measurements.
 
+The update Source Summary Table CSV file is located at:
+
+```text
+output/summary_table.csv
+```
 ---
 
 ## CASDA Cache
@@ -108,7 +113,7 @@ The cache may be deleted at any time. Files will be downloaded again automatical
 
 ## Submitting Updates
 
-After verifying the new entries, upload `VLASS_RACS_Updated.db` to a file-sharing service such as OneDrive or Google Drive.
+After verifying the new entries, upload `VLASS_RACS_Update.db` to a file-sharing service such as OneDrive or Google Drive.
 
 Email the download link to:
 

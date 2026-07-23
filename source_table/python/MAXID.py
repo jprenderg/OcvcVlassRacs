@@ -6,14 +6,14 @@ Created on Mon May 25 16:46:42 2026
 """
 import sqlite3
 
-from config import INPUT_DB
+from config import MASTER_DB
 
 def maxid():
     """
     Returns the largest SOURCE_ID currently in the updated database.
     """
 
-    with sqlite3.connect(INPUT_DB) as conn:
+    with sqlite3.connect(MASTER_DB) as conn:
 
         cursor = conn.execute(
             "SELECT MAX(SOURCE_ID) FROM Source_Table"
