@@ -554,6 +554,7 @@
 <li>Orbital period uncertainty (optional)</li>
 <li>Spin period (optional)</li>
 <li>Spin period uncertainty (optional)</li>
+<li>A user provided source and class name for use in the event that a SIMBAD match is not available</li>
 </ul>
 <p>Run the program:</p>
 <pre><code class="language-bash">python update_database.py
@@ -574,10 +575,13 @@
 <p>The master database is <strong>never modified</strong>.</p>
 <hr />
 <h2 id="output">Output</h2>
-<p>After the program finishes, the updated database is located at:</p>
+<p>After the program finishes, the update database is located at:</p>
 <pre><code class="language-text">output/VLASS_RACS_Updated.db
 </code></pre>
 <p>This database contains only the newly added records and their associated measurements.</p>
+<p>The update Source Summary Table CSV file is located at:</p>
+<pre><code class="language-text">output/summary_table.csv
+</code></pre>
 <hr />
 <h2 id="casda-cache">CASDA Cache</h2>
 <p>Downloaded CASDA files are stored in:</p>
@@ -587,7 +591,7 @@
 <p>The cache may be deleted at any time. Files will be downloaded again automatically when needed.</p>
 <hr />
 <h2 id="submitting-updates">Submitting Updates</h2>
-<p>After verifying the new entries, upload <code>VLASS_RACS_Updated.db</code> to a file-sharing service such as OneDrive or Google Drive.</p>
+<p>After verifying the new entries, upload <code>VLASS_RACS_Update.db</code> to a file-sharing service such as OneDrive or Google Drive.</p>
 <p>Email the download link to:</p>
 <p><strong>jprenderg@outlook.com</strong></p>
 
