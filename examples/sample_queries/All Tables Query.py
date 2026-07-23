@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jun 28 14:50:34 2026
+Created on Thu Jul 23 18:51:16 2026
 
 @author: Joe
 """
@@ -15,17 +15,24 @@ import sys
 
 repo_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(repo_root))
-from config import MASTER_DB
-from config import OUTPUT_DB
+
+from config import OUTPUT_DB, MASTER_DB
+
 
 # ------------------------------------------------------------
 # Inputs
 # ------------------------------------------------------------
 
+# Reads from database update
 db_path = OUTPUT_DB
+
+# Read from master database
+# db_path = MASTER_DB
 
 ra_in = 245.4470133276900
 dec_in = -22.8862182469700
+
+search_radius_arcsec = 300.0
 
 
 # ------------------------------------------------------------
@@ -33,6 +40,7 @@ dec_in = -22.8862182469700
 # ------------------------------------------------------------
 
 conn = sqlite3.connect(db_path)
+
 
 # ------------------------------------------------------------
 # Load source_table and find closest SOURCE_ID
@@ -57,7 +65,15 @@ df_source_all = pd.read_sql_query(
     conn
 )
 
-target = SkyCoord(ra=ra_in * u.deg, dec=dec_in * u.deg, frame="icrs")
+if df_source_all.empty:
+    conn.close()
+    raise ValueError("source_table contains no sources with valid coordinates.")
+
+target = SkyCoord(
+    ra=ra_in * u.deg,
+    dec=dec_in * u.deg,
+    frame="icrs"
+)
 
 coords = SkyCoord(
     ra=df_source_all["RA"].astype(float).values * u.deg,
@@ -71,12 +87,13 @@ idx = int(np.argmin(sep_arcsec))
 source_id = int(df_source_all.iloc[idx]["SOURCE_ID"])
 closest_sep = float(sep_arcsec[idx])
 
-print("\nClosest SOURCE_ID:")
+print("\nClosest primary source:")
 print("SOURCE_ID =", source_id)
 print("Separation arcsec =", closest_sep)
 
+
 # ------------------------------------------------------------
-# Print source_table row
+# Load primary source row
 # ------------------------------------------------------------
 
 df_source = pd.read_sql_query(
@@ -89,14 +106,18 @@ df_source = pd.read_sql_query(
     params=(source_id,)
 )
 
-print("\nSource_Table row:")
+if df_source.empty:
+    conn.close()
+    raise ValueError(f"SOURCE_ID {source_id} was not found.")
+
+print("\nPrimary Source_Table row:")
 print(df_source.to_string(index=False))
 
+
 # ------------------------------------------------------------
-# Print nearby non-primary sources (within 5 arcminutes)
+# Find nearby non-primary sources within 5 arcminutes
 # ------------------------------------------------------------
 
-search_radius_arcsec = 300.0
 search_radius_deg = search_radius_arcsec / 3600.0
 
 ra0 = float(df_source.iloc[0]["RA"])
@@ -121,73 +142,188 @@ df_neighbors = pd.read_sql_query(
     params=(ra_min, ra_max, dec_min, dec_max)
 )
 
-if len(df_neighbors) > 0:
+if not df_neighbors.empty:
 
     c_primary = SkyCoord(
         ra=ra0 * u.deg,
-        dec=dec0 * u.deg
+        dec=dec0 * u.deg,
+        frame="icrs"
     )
 
     c_neighbors = SkyCoord(
         ra=df_neighbors["RA"].astype(float).values * u.deg,
-        dec=df_neighbors["DEC"].astype(float).values * u.deg
+        dec=df_neighbors["DEC"].astype(float).values * u.deg,
+        frame="icrs"
     )
 
     df_neighbors["SEPARATION_ARCSEC"] = (
-        c_primary.separation(c_neighbors).arcsecond
+        c_primary.separation(c_neighbors).arcsec
     )
 
     df_neighbors = df_neighbors[
-        (df_neighbors["SEPARATION_ARCSEC"] <= search_radius_arcsec) &
-        (df_neighbors["SOURCE_ID"] != source_id)
+        (df_neighbors["SEPARATION_ARCSEC"] <= search_radius_arcsec)
+        & (df_neighbors["SOURCE_ID"] != source_id)
     ]
 
-    df_neighbors = df_neighbors.sort_values(
-        "SEPARATION_ARCSEC"
-    ).reset_index(drop=True)
+    df_neighbors = (
+        df_neighbors
+        .sort_values("SEPARATION_ARCSEC")
+        .reset_index(drop=True)
+    )
 
-print("\nNearby PRIMARY_FLAG = 0 sources (within 5 arcminutes):")
 
-if len(df_neighbors) == 0:
+print("\nNearby PRIMARY_FLAG = 0 sources within 5 arcminutes:")
+
+if df_neighbors.empty:
     print("None found.")
 else:
     print(df_neighbors.to_string(index=False))
 
 
-
-
 # ------------------------------------------------------------
-# Print all related table rows
+# SOURCE_ID values for primary and neighbors
 # ------------------------------------------------------------
 
-tables = [
-    ("Name_Table", "name_table", "DEFAULT_NAME DESC, NAME"),
-    ("Measurement_Table", "measurement_table", "OBSERVATORY, EPOCH, BAND"),
-    ("Class_Table", "class_table", "DEFAULT_CLASS DESC, CLASS"),
-    ("Period_Table", "period_table", "TYPE, PERIOD"),
-]
+related_source_ids = [source_id]
 
-for label, table_name, order_by in tables:
-
-    print("\n" + "-" * 80)
-    print(label)
-    print("-" * 80)
-
-    df = pd.read_sql_query(
-        f"""
-        SELECT *
-        FROM {table_name}
-        WHERE SOURCE_ID = ?
-        ORDER BY {order_by}
-        """,
-        conn,
-        params=(source_id,)
+if not df_neighbors.empty:
+    related_source_ids.extend(
+        df_neighbors["SOURCE_ID"].astype(int).tolist()
     )
 
-    if len(df) == 0:
-        print("No rows found.")
-    else:
-        print(df.to_string(index=False))
+# Remove duplicate IDs while preserving order.
+related_source_ids = list(dict.fromkeys(related_source_ids))
+
+print("\nPrimary and neighbor SOURCE_ID values:")
+print(related_source_ids)
+
+placeholders = ",".join("?" for _ in related_source_ids)
+
+
+# ------------------------------------------------------------
+# Name Table: primary and neighbors
+# ------------------------------------------------------------
+
+print("\n" + "-" * 80)
+print("Name_Table — primary and neighbors")
+print("-" * 80)
+
+df_name = pd.read_sql_query(
+    f"""
+    SELECT
+        s.PRIMARY_FLAG,
+        n.*
+    FROM name_table AS n
+    JOIN source_table AS s
+        ON n.SOURCE_ID = s.SOURCE_ID
+    WHERE n.SOURCE_ID IN ({placeholders})
+    ORDER BY
+        s.PRIMARY_FLAG DESC,
+        n.SOURCE_ID,
+        n.DEFAULT_NAME DESC,
+        n.NAME
+    """,
+    conn,
+    params=related_source_ids
+)
+
+if df_name.empty:
+    print("No rows found.")
+else:
+    print(df_name.to_string(index=False))
+
+
+# ------------------------------------------------------------
+# Measurement Table: primary and neighbors
+# ------------------------------------------------------------
+
+print("\n" + "-" * 80)
+print("Measurement_Table — primary and neighbors")
+print("-" * 80)
+
+df_measurement = pd.read_sql_query(
+    f"""
+    SELECT
+        s.PRIMARY_FLAG,
+        m.*
+    FROM measurement_table AS m
+    JOIN source_table AS s
+        ON m.SOURCE_ID = s.SOURCE_ID
+    WHERE m.SOURCE_ID IN ({placeholders})
+    ORDER BY
+        s.PRIMARY_FLAG DESC,
+        m.SOURCE_ID,
+        m.OBSERVATORY,
+        m.EPOCH,
+        m.BAND
+    """,
+    conn,
+    params=related_source_ids
+)
+
+if df_measurement.empty:
+    print("No rows found.")
+else:
+    print(df_measurement.to_string(index=False))
+
+
+# ------------------------------------------------------------
+# Class Table: primary and neighbors
+# ------------------------------------------------------------
+
+print("\n" + "-" * 80)
+print("Class_Table — primary and neighbors")
+print("-" * 80)
+
+df_class = pd.read_sql_query(
+    f"""
+    SELECT
+        s.PRIMARY_FLAG,
+        c.*
+    FROM class_table AS c
+    JOIN source_table AS s
+        ON c.SOURCE_ID = s.SOURCE_ID
+    WHERE c.SOURCE_ID IN ({placeholders})
+    ORDER BY
+        s.PRIMARY_FLAG DESC,
+        c.SOURCE_ID,
+        c.DEFAULT_CLASS DESC,
+        c.CLASS
+    """,
+    conn,
+    params=related_source_ids
+)
+
+if df_class.empty:
+    print("No rows found.")
+else:
+    print(df_class.to_string(index=False))
+
+
+# ------------------------------------------------------------
+# Period Table: primary source only
+# ------------------------------------------------------------
+
+print("\n" + "-" * 80)
+print("Period_Table — primary source only")
+print("-" * 80)
+
+df_period = pd.read_sql_query(
+    """
+    SELECT *
+    FROM period_table
+    WHERE SOURCE_ID = ?
+    ORDER BY TYPE, PERIOD
+    """,
+    conn,
+    params=(source_id,)
+)
+
+if df_period.empty:
+    print("No rows found.")
+else:
+    print(df_period.to_string(index=False))
+
 
 # ------------------------------------------------------------
 # Close database
